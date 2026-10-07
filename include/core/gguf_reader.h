@@ -51,7 +51,7 @@ typedef enum {
     GGUF_TYPE_I2_S   = 36, /* BitNet b1.58 ternary packing (Microsoft BitNet / T-MAC fork).
                               Mainline ggml removed id 36 (= IQ4_NL_4_4); BitNet assigns it
                               to "i2_s": 2 bits/weight, 4 trits/byte, codes {0,1,2}={-1,0,+1}
-                              LSB-first, code 3 reserved. Ships in Falcon3-*-1.58bit GGUF. */
+                              MSB-first, code 3 reserved. Ships in Falcon3-*-1.58bit GGUF. */
     GGUF_TYPE_COUNT
 } GGUFType;
 

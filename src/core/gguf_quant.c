@@ -279,7 +279,7 @@ void gguf_dequant_q2_0(float *out, const void *data, size_t n_elems) {
 /*
  * Microsoft BitNet / T-MAC assign id 36 to "i2_s" (mainline ggml removed 36,
  * = IQ4_NL_4_4). Payload, measured against Falcon3-3B-Instruct-1.58bit:
- *   - EXACTLY 2 bits/weight, 4 trits/byte, LSB first — no block header,
+ *   - EXACTLY 2 bits/weight, 4 trits/byte, MSB first — no block header,
  *     no stored scale (the published GGUF carries none).
  *   - code = (qs[j/4] >> (6 - 2*(j%4))) & 0x3, mapped {0,1,2} = {-1, 0, +1};
  *     code 3 never occurs (reserved) → decoded as 0. BitNet's quantizer packs
