@@ -27,3 +27,4 @@ void gguf_dequant_q2_k(float *out, const void *data, size_t n_elems);
 void gguf_dequant_q3_k(float *out, const void *data, size_t n_elems);
 void gguf_dequant_iq4_nl(float *out, const void *data, size_t n_elems);
 void gguf_dequant_q2_0(float *out, const void *data, size_t n_elems);
+void gguf_dequant_i2_s(float *out, const void *data, size_t n_elems);

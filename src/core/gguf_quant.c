@@ -14,6 +14,7 @@
 #include "core/gguf_quant.h"
 #include <stdint.h>
 #include <string.h>
+#include <stdlib.h>
 #include <math.h>
 
 /* ── FP16 helper ──────────────────────────────────────────────────────────── */
@@ -271,6 +272,44 @@ void gguf_dequant_q2_0(float *out, const void *data, size_t n_elems) {
         }
     }
     size_t done = n_blocks * Q2_0_BLOCK_SIZE;
+    for (size_t i = done; i < n_elems; i++) out[i] = 0.0f;
+}
+
+/* ── I2_S — BitNet b1.58 ternary (fork type id 36) ────────────────────────── */
+/*
+ * Microsoft BitNet / T-MAC assign id 36 to "i2_s" (mainline ggml removed 36,
+ * = IQ4_NL_4_4). Payload, measured against Falcon3-3B-Instruct-1.58bit:
+ *   - EXACTLY 2 bits/weight, 4 trits/byte, LSB first — no block header,
+ *     no stored scale (the published GGUF carries none).
+ *   - code = (qs[j/4] >> (6 - 2*(j%4))) & 0x3, mapped {0,1,2} = {-1, 0, +1};
+ *     code 3 never occurs (reserved) → decoded as 0. BitNet's quantizer packs
+ *     group j into bits (6 - 2*j): the FIRST weight is the MSBs, not the LSBs.
+ * The weights therefore decode to unit ternary; the effective scale is 1.0
+ * unless PZ_I2S_SCALE is set (BitNet's per-tensor scale is not in this file).
+ */
+#define I2_S_BYTES_PER_BLOCK 1   /* 1 byte = 4 trits */
+#define I2_S_ELEMS_PER_BLOCK 4
+
+void gguf_dequant_i2_s(float *out, const void *data, size_t n_elems) {
+    const uint8_t *p = (const uint8_t *)data;
+    static float scale = -1.0f;
+    if (scale < 0.0f) {
+        const char *s = getenv("PZ_I2S_SCALE");
+        scale = s ? strtof(s, NULL) : 1.0f;
+    }
+    /* {0,1,2}→{-1,0,+1}; code 3 reserved → 0. */
+    static const float lut[4] = { -1.0f, 0.0f, 1.0f, 0.0f };
+
+    size_t n_blocks = n_elems / I2_S_ELEMS_PER_BLOCK;
+    for (size_t b = 0; b < n_blocks; b++) {
+        uint8_t byte = p[b * I2_S_BYTES_PER_BLOCK];
+        float *dst = out + b * I2_S_ELEMS_PER_BLOCK;
+        dst[0] = lut[(byte >> 6) & 0x3] * scale;
+        dst[1] = lut[(byte >> 4) & 0x3] * scale;
+        dst[2] = lut[(byte >> 2) & 0x3] * scale;
+        dst[3] = lut[(byte      ) & 0x3] * scale;
+    }
+    size_t done = n_blocks * I2_S_ELEMS_PER_BLOCK;
     for (size_t i = done; i < n_elems; i++) out[i] = 0.0f;
 }
 

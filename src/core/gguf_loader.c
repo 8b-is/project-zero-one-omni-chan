@@ -129,10 +129,13 @@ static float *tensor_to_f32(const GGUFTensor *t, size_t n_elems,
     case GGUF_TYPE_Q2_0:
         gguf_dequant_q2_0(buf, t->data, n_elems);
         break;
+    case GGUF_TYPE_I2_S:
+        gguf_dequant_i2_s(buf, t->data, n_elems);
+        break;
     default:
         fprintf(stderr,
             "[gguf_loader] unsupported quant type %d ('%s') for tensor '%s'\n"
-            "[gguf_loader] Supported: F32, F16, BF16, Q8_0, Q4_K, Q4_0, Q5_0, Q5_1, Q5_K, Q6_K, Q2_K, Q3_K, IQ4_NL\n"
+            "[gguf_loader] Supported: F32, F16, BF16, Q8_0, Q4_K, Q4_0, Q5_0, Q5_1, Q5_K, Q6_K, Q2_K, Q3_K, IQ4_NL, I2_S\n"
             "[gguf_loader] Convert with: llama-quantize model.gguf out.gguf Q4_K_S\n",
             (int)t->type, gguf_type_name(t->type), t->name);
         free(buf);
@@ -1144,7 +1147,8 @@ TernaryError weights_from_gguf(TransformerWeights *w, const Config *cfg,
         } else if (t->type == GGUF_TYPE_Q4_K || t->type == GGUF_TYPE_Q8_0 ||
                    t->type == GGUF_TYPE_Q4_0 || t->type == GGUF_TYPE_Q5_0 ||
                    t->type == GGUF_TYPE_Q5_1 ||
-                   t->type == GGUF_TYPE_Q5_K || t->type == GGUF_TYPE_Q6_K) {
+                   t->type == GGUF_TYPE_Q5_K || t->type == GGUF_TYPE_Q6_K ||
+                   t->type == GGUF_TYPE_I2_S) {
             /* Dequantise → F32 kept as embd_f32 (exact llama.cpp path).
              * Also build BF16 copy for the classifier (wcls weight-tied). */
             float *ftmp = (float *)malloc(n * sizeof(float));
@@ -1156,6 +1160,7 @@ TernaryError weights_from_gguf(TransformerWeights *w, const Config *cfg,
                 case GGUF_TYPE_Q5_1: gguf_dequant_q5_1(ftmp, t->data, n); break;
                 case GGUF_TYPE_Q5_K: gguf_dequant_q5_k(ftmp, t->data, n); break;
                 case GGUF_TYPE_Q6_K: gguf_dequant_q6_k(ftmp, t->data, n); break;
+                case GGUF_TYPE_I2_S: gguf_dequant_i2_s(ftmp, t->data, n); break;
                 default:             gguf_dequant_q4_0(ftmp, t->data, n); break;
             }
             /* Keep F32 buffer for embedding lookup — registered in store for cleanup */

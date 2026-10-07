@@ -152,6 +152,7 @@ static size_t gguf_block_size(GGUFType t) {
          * size_bytes computed here is informational only (t->data is
          * located via the offset stored in the file, not via this table). */
         case GGUF_TYPE_Q2_0: return 2 + 32;  /* scale(f16) + 32 bytes (2 bits × 128) = 128 weights */
+        case GGUF_TYPE_I2_S: return 1;       /* no scale: 2 bits/weight, 4 trits/byte */
         case GGUF_TYPE_I8:   return 1;
         case GGUF_TYPE_I16:  return 2;
         case GGUF_TYPE_I32:  return 4;
@@ -168,6 +169,7 @@ static size_t gguf_block_elems(GGUFType t) {
         case GGUF_TYPE_Q8_0: case GGUF_TYPE_Q8_1:
         case GGUF_TYPE_IQ4_NL: return 32;
         case GGUF_TYPE_Q2_0: return 128;
+        case GGUF_TYPE_I2_S: return 4;
         case GGUF_TYPE_Q2_K: case GGUF_TYPE_Q3_K:
         case GGUF_TYPE_Q4_K: case GGUF_TYPE_Q5_K:
         case GGUF_TYPE_Q6_K: case GGUF_TYPE_Q8_K: return 256;
@@ -403,6 +405,7 @@ const char *gguf_type_name(GGUFType t) {
         case GGUF_TYPE_Q8_K: return "Q8_K";
         case GGUF_TYPE_IQ4_NL: return "IQ4_NL";
         case GGUF_TYPE_Q2_0: return "Q2_0";
+        case GGUF_TYPE_I2_S: return "I2_S";
         case GGUF_TYPE_I8:   return "I8";
         case GGUF_TYPE_I16:  return "I16";
         case GGUF_TYPE_I32:  return "I32";

@@ -64,6 +64,7 @@ static float *dequant_expert_weight(
         case 14: gguf_dequant_q6_k(s_dequant_buf, raw, n_elems); break; /* Q6_K */
         case  8: gguf_dequant_q8_0(s_dequant_buf, raw, n_elems); break; /* Q8_0 */
         case 20: gguf_dequant_iq4_nl(s_dequant_buf, raw, n_elems); break; /* IQ4_NL */
+        case 36: gguf_dequant_i2_s(s_dequant_buf, raw, n_elems); break; /* I2_S (BitNet ternary) */
         default: /* F32 already decoded (ternary / other) */
             for (size_t i = 0; i < n_elems; i++) {
                 ((float *)s_dequant_buf)[i] = ((const float *)raw)[i];
@@ -86,6 +87,7 @@ static size_t quant_tensor_bytes(int quant_type, size_t n_elems) {
         case  7: return (n_elems / 32)  * 24;   /* Q5_1: 24 bytes/block */
         case  8: return (n_elems / 32)  * 34;   /* Q8_0: 34 bytes/block */
         case 20: return (n_elems / 32)  * 18;   /* IQ4_NL: 18 bytes/block */
+        case 36: return (n_elems / 4)   * 1;    /* I2_S: 1 byte / 4 trits */
         default: return n_elems * 4;             /* F32 fallback */
     }
 }
