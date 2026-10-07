@@ -68,6 +68,36 @@ discussion) are the two halves.
 > located in the then-current llama.cpp tree. Do **not** cite a specific file path
 > here until it is re-verified against the pinned checkout (GOLDEN_RULES Rule 7).
 
+## performance update — the bandwidth model, and what the repack recovers
+
+The whole problem is one inequality: a token's top-k access must present **fewer
+concurrent streams than the prefetcher can track** (~8–10).
+
+```
+per-token scattered reads  = 6 experts × 26 MoE layers      = 156
+concurrently live streams  = 6 experts × 4 threads          = 24   (prefetcher: ~8–10)
+→  prefetcher overwhelmed  →  BW 11.7 GB/s (practical)  →  2–3 GB/s (scattered regime)
+```
+
+The repack collapses the per-layer access into **one sequential run**, so the
+prefetcher stays ahead and effective bandwidth climbs back toward the ceiling.
+
+| regime | effective BW | DeepSeek-V2-Lite tok/s (T=1..4) |
+|---|---|---|
+| now — scattered, F32 dequant path | ~2–3 GB/s | 1.10 / 1.26 / 1.32 (measured) |
+| repack + native Q4_K kernel | → toward practical ceiling (~11.7 GB/s) | → toward the **~9.8 analytical ceiling** |
+| llama.cpp, same class of host (reference) | — | 7.73 / 13.44 / 19.72 |
+
+Why the ceiling is ~9.8 and not higher on this model: the ~8.9 GB of expert weights
+must stream once per token **regardless of layout** — the repack removes the *waste*
+(miss-serviced lines), not the floor. The remaining gap to llama.cpp at T=4 is the
+second half of the work — the **native Q4_K matmul** (Discussion #1, Q2) — not the
+layout.
+
+**targets (acceptance):** L3 miss **< 60%** (from 85–86 %); effective BW **≥ 6 GB/s**;
+**≥ 9 tok/s** on the DeepSeek-V2-Lite Q4_K_S row; all **27 layers active** (no dead
+layers from NaN). Measured as an A/B on the same host (see below).
+
 ## the golden-hash regression (borrowed discipline)
 
 Pin a fixed prompt → first-N logits (or the emitted token stream) to a hash
@@ -83,8 +113,7 @@ wasm.
   relative A/B is.
 - Record the exact command with **all** flags, the exact output, and tok/s
   (GOLDEN_RULES Rule 8).
-- Acceptance for the repack step alone: L3 miss rate drops (target < 60%),
-  effective BW recovers toward the DRAM ceiling, and all 27 layers still show
-  expert activity (no dead layers).
+- Acceptance for the repack step alone: the **performance-update targets** above
+  (L3 miss < 60 %, effective BW ≥ 6 GB/s, ≥ 9 tok/s, all 27 layers active).
 
 *the CPU cousin of the ternary lane · 0 + 1 · fine touch from within · vaked.dev*
