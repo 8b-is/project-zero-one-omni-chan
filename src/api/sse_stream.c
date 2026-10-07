@@ -95,7 +95,8 @@ int sse_write_done(int fd, const char *id) {
     return (int)write_all(fd, buf, (size_t)n);
 }
 
-char *sse_format_full_response(const char *id, const char *full_text) {
+char *sse_format_full_response(const char *id, const char *full_text,
+                               int prompt_tokens, int completion_tokens) {
     if (!id || !full_text) return NULL;
 
     /* Allocate escaped output buffer.  Upper bound: control characters (<0x20)
@@ -122,19 +123,21 @@ char *sse_format_full_response(const char *id, const char *full_text) {
                       "\"message\":{\"role\":\"assistant\","
                                    "\"content\":\"%.*s\"},"
                       "\"finish_reason\":\"stop\"}],"
-         "\"usage\":{\"prompt_tokens\":0,"
-                   "\"completion_tokens\":0,"
-                   "\"total_tokens\":0}}",
+         "\"usage\":{\"prompt_tokens\":%d,"
+                   "\"completion_tokens\":%d,"
+                   "\"total_tokens\":%d}}",
         id,
-        (int)esc_len, escaped);
+        (int)esc_len, escaped,
+        prompt_tokens, completion_tokens, prompt_tokens + completion_tokens);
 
     free(escaped);
     if (n < 0 || (size_t)n >= buf_cap) { free(buf); return NULL; }
     return buf;
 }
 
-int sse_write_full_response(int fd, const char *id, const char *full_text) {
-    char *json = sse_format_full_response(id, full_text);
+int sse_write_full_response(int fd, const char *id, const char *full_text,
+                            int prompt_tokens, int completion_tokens) {
+    char *json = sse_format_full_response(id, full_text, prompt_tokens, completion_tokens);
     if (!json) return -1;
     int written = (int)write_all(fd, json, strlen(json));
     free(json);

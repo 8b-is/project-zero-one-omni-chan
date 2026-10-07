@@ -27,7 +27,10 @@ void generate_with_callback(const Config *cfg, const TransformerWeights *w,
                              RunState *s, const MoEConfig *mc,
                              Tokenizer *tok, ThreadPool *tp, const char *prompt,
                              int max_tokens, float temperature, float top_p,
-                             TokenCallback callback, void *userdata) {
+                             TokenCallback callback, void *userdata,
+                             int *out_prompt_tokens, int *out_completion_tokens) {
+    if (out_prompt_tokens)     *out_prompt_tokens = 0;
+    if (out_completion_tokens) *out_completion_tokens = 0;
     if (!prompt) prompt = "";
     tn_step_timing_reset();
 
@@ -237,6 +240,10 @@ void generate_with_callback(const Config *cfg, const TransformerWeights *w,
         fprintf(stderr, "\n[gen] %.2f tok/s (%d tokens)\n", tok_per_sec, tokens_generated);
     }
 
+    /* Report token counts to the caller (API `usage`); optional. */
+    if (out_prompt_tokens)     *out_prompt_tokens = n_prompt;
+    if (out_completion_tokens) *out_completion_tokens = tokens_generated;
+
     /* Print expert utilisation for MoE models */
     if (mc && mc->is_moe)
         moe_expert_tracking_print(cfg->n_layers, mc->num_experts);
@@ -250,7 +257,7 @@ void generate(const Config *cfg, const TransformerWeights *w, RunState *s,
               int max_tokens, float temperature, float top_p) {
     generate_with_callback(cfg, w, s, mc, tok, tp, prompt,
                            max_tokens, temperature, top_p,
-                           stdout_token_callback, NULL);
+                           stdout_token_callback, NULL, NULL, NULL);
     /* generate_with_callback already reports timing to stderr */
     printf("\n");
 }

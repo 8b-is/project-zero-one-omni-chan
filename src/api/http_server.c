@@ -442,10 +442,12 @@ static void handle_chat_completions(int fd, const char *body_start, size_t body_
     cancel_registry_begin(&ctx->cancel, st.public_id);
 
     /* Run inference */
+    int prompt_tokens = 0, completion_tokens = 0;
     generate_with_callback(ctx->cfg, ctx->weights, ctx->run_state, ctx->moe_cfg,
                            ctx->tok, ctx->tp,
                            prompt, max_tokens, temperature, top_p,
-                           streaming_token_callback, &st);
+                           streaming_token_callback, &st,
+                           &prompt_tokens, &completion_tokens);
 
     cancel_registry_end(&ctx->cancel);
     metrics_add_tokens(&ctx->metrics, st.tokens_emitted);
@@ -458,7 +460,7 @@ static void handle_chat_completions(int fd, const char *body_start, size_t body_
          * body) and only then wrote the actual JSON via a second write() —
          * conformant HTTP clients stop reading at 0 bytes and never see it. */
         const char *text = st.accum_buf ? st.accum_buf : "";
-        char *json = sse_format_full_response(id, text);
+        char *json = sse_format_full_response(id, text, prompt_tokens, completion_tokens);
         send_response_ex(fd, 200, "application/json", json, 0, extra_headers);
         free(json);
     }

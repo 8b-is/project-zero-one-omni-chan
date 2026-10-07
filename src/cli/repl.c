@@ -186,7 +186,7 @@ void run_repl(Config *p, TransformerWeights *w,
         int64_t start_time = timer_now_us();
         generate_with_callback(p, w, s, mc, t, tp, line,
                                args->max_tokens, args->temperature, args->top_p,
-                               repl_token_callback, &rc);
+                               repl_token_callback, &rc, NULL, NULL);
         md_render_flush(&rc.md);
         if (rc.is_tty && rc.live.count >= 2) fprintf(stderr, "\n"); /* move past the live tok/s line */
         md_render_free(&rc.md);

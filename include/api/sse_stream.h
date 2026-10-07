@@ -37,7 +37,8 @@ int sse_write_done(int fd, const char *id);
  * id:        request ID string.
  * fd:        open writable file descriptor.
  * Returns bytes written, or -1 on error. */
-int sse_write_full_response(int fd, const char *id, const char *full_text);
+int sse_write_full_response(int fd, const char *id, const char *full_text,
+                             int prompt_tokens, int completion_tokens);
 
 /* Phase 22: builds the same non-streaming chat completion JSON as
  * sse_write_full_response() but returns it as a heap-allocated,
@@ -45,7 +46,10 @@ int sse_write_full_response(int fd, const char *id, const char *full_text);
  * compute a correct Content-Length header before sending any bytes (writing
  * headers with Content-Length first, then the body via a separate write(),
  * requires knowing the length up front). Caller must free() the result.
+ * prompt_tokens / completion_tokens fill the `usage` block (real counts are
+ * plumbed from generate_with_callback; pass 0 when unavailable).
  * Returns NULL on allocation failure or invalid arguments. */
-char *sse_format_full_response(const char *id, const char *full_text);
+char *sse_format_full_response(const char *id, const char *full_text,
+                               int prompt_tokens, int completion_tokens);
 
 #endif /* TN_SSE_STREAM_H */

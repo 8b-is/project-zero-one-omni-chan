@@ -52,11 +52,18 @@ typedef int (*TokenCallback)(const char *piece, void *userdata);
  * decoded token text piece to @p callback with @p userdata.  Used by the
  * OpenAI-compatible API server (Phase 21) to stream tokens over SSE without
  * modifying core inference logic.
+ *
+ * @param out_prompt_tokens     Optional (may be NULL): receives the number of
+ *                              prompt tokens fed to the model (post chat
+ *                              template / BOS), for API `usage` reporting.
+ * @param out_completion_tokens Optional (may be NULL): receives the number of
+ *                              tokens actually generated.
  */
 void generate_with_callback(const Config *cfg, const TransformerWeights *w,
                              RunState *s, const MoEConfig *mc,
                              Tokenizer *tok, ThreadPool *tp, const char *prompt,
                              int max_tokens, float temperature, float top_p,
-                             TokenCallback callback, void *userdata);
+                             TokenCallback callback, void *userdata,
+                             int *out_prompt_tokens, int *out_completion_tokens);
 
 #endif /* TN_GENERATE_H */
