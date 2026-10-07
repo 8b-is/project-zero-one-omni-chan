@@ -48,6 +48,10 @@ typedef enum {
     GGUF_TYPE_BF16   = 30,
     GGUF_TYPE_Q2_0   = 42, /* legacy 2-bit block quant (ggml block_q2_0, block=64) —
                                used by PrismML's Qwen3.6-based "Bonsai" ternary GGUF releases */
+    GGUF_TYPE_I2_S   = 36, /* BitNet b1.58 ternary packing (Microsoft BitNet / T-MAC fork).
+                              Mainline ggml removed id 36 (= IQ4_NL_4_4); BitNet assigns it
+                              to "i2_s": 2 bits/weight, 4 trits/byte, codes {0,1,2}={-1,0,+1}
+                              LSB-first, code 3 reserved. Ships in Falcon3-*-1.58bit GGUF. */
     GGUF_TYPE_COUNT
 } GGUFType;
 
