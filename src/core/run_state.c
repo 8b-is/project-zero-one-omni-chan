@@ -2,23 +2,10 @@
 #include "core/platform.h"
 #include "math/rope.h"
 #include "memory/aligned_alloc.h"
+#include "memory/safe_alloc.h"     /* tn_alloc_too_large() — shared OOM guard */
 #include "kv_cache/kv_strategy.h"  /* tn_get_free_ram() for the OOM sanity guard */
 #include <string.h>
 #include <stdlib.h>   /* free() for k_rope_cache pointer array */
-
-/* Deterministic OOM trap: on some platforms (notably macOS) calloc over-commits
- * for absurd sizes and the process is OOM-killed instead of receiving NULL.
- * Reject up front when a single buffer would dwarf available RAM. The 32x
- * headroom is far beyond any runnable configuration, so this never rejects a
- * legitimate allocation — it only traps pathological requests (e.g. INT_MAX
- * context) the same way malloc-returns-NULL already does on Linux. */
-static int tn_alloc_too_large(size_t count, size_t elem_size) {
-  tn_i64 ram = tn_get_free_ram();
-  size_t bytes;
-  if (ram <= 0) return 0; /* unknown RAM: fall back to malloc-NULL behavior */
-  if (tn_size_mul_overflow(count, elem_size, &bytes)) return 1;
-  return bytes > (size_t)ram * 32;
-}
 
 TernaryError run_state_alloc(RunState *s, const Config *cfg, int max_seq_len) {
   return run_state_alloc_ex(s, cfg, max_seq_len, false);
