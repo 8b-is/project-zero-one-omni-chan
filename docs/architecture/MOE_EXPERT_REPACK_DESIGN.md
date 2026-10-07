@@ -116,4 +116,28 @@ wasm.
 - Acceptance for the repack step alone: the **performance-update targets** above
   (L3 miss < 60 %, effective BW ≥ 6 GB/s, ≥ 9 tok/s, all 27 layers active).
 
+## reproduce the baseline (Rule 8 — record every flag, including defaults)
+
+The measurement that motivates this doc, in the exact command form the repo
+requires (all flags explicit; `--simd`/`--classifier` default to `auto`):
+
+```bash
+./adaptive_ai_engine \
+  --model models/deepseek-v2-lite-chat-Q4_K_S.gguf \
+  --prompt "What is the capital of France?" \
+  --max-tokens 30 --temperature 0.0 --threads 4 \
+  --simd auto --classifier auto
+# record: exact output text · tok/s · and (perf stat) IPC + L3-miss
+```
+
+Record the *output text + tok/s + IPC + L3-miss* together — a tok/s number
+without its flags is the exact failure GOLDEN_RULES Rule 8 exists to prevent.
+The same run, with the repack in place, is the A/B baseline.
+
+## next artifact
+
+The repack itself is `tools/repack_experts.py` (offline, writes the `*.pzrepack`
+side-car described above) plus the load-time pointer swap in `gguf_loader.c` —
+neither is in this docs PR; this doc is the design that gates them.
+
 *the CPU cousin of the ternary lane · 0 + 1 · fine touch from within · vaked.dev*
