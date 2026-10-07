@@ -395,6 +395,7 @@ Two open problems where outside expertise would make a real difference:
 
 Existing SIMD work documented in [`docs/KERNEL_INTERNALS.md`](docs/KERNEL_INTERNALS.md).
 MoE repacking thread: [Discussion #1](https://github.com/shifulegend/project-zero/discussions/1)
+MoE repack design: [`docs/architecture/MOE_EXPERT_REPACK_DESIGN.md`](docs/architecture/MOE_EXPERT_REPACK_DESIGN.md) — a zero-heap offline side-car (Discussion #1, Q1)
 
 ---
 
