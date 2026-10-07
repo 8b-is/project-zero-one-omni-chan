@@ -3,6 +3,20 @@
 > Notable changes: what, why, affected areas, related commit/PR. Newest first.
 > Update after each meaningful sub-step. Last updated: 2026-08-04.
 
+### 2026-10-07 — MoE expert-repack design (Discussion #1, Q1)
+- What: added `docs/architecture/MOE_EXPERT_REPACK_DESIGN.md` — the offline zero-heap
+  repack (granularity: whole Q4_K super-blocks), the supplements (order table, `madvise`,
+  huge pages), llama.cpp's "dispatch at compute time, never dequant upfront" principle,
+  and the golden-hash + same-host A/B verification plan. Decision recorded in
+  `docs/ai/decision-log.md`.
+- Why: the highest-impact open ask (Discussion #1); companion to
+  `MOE_RESEARCH_AND_FIX_PLAN.md`.
+- Areas: `docs/architecture/MOE_EXPERT_REPACK_DESIGN.md` (new), `docs/ai/decision-log.md`.
+  No engine code changed.
+- Verified: `make release CC=clang` builds on this host (macOS arm64). Engine tok/s and
+  golden output: N/A (docs-only change).
+- Branch: `feat/moe-expert-repack-design`.
+
 ### 2026-08-04 — DeepSeek MoE benchmark run: project-zero vs colibri vs llama.cpp
 - What: user asked to run DeepSeek MoE on project-zero, colibri (`shifulegend/colibri`), and
   llama.cpp and report results. Found colibri has no DeepSeek-arch loader (only GLM-5.2/Inkling/

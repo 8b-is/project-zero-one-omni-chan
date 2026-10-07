@@ -3,6 +3,20 @@
 > Timestamped architectural / tooling / workflow / process decisions. Newest first.
 > Read at session start. Last updated: 2026-07-31.
 
+### 2026-10-07 — MoE expert repack: a zero-heap offline side-car, not a load-time copy
+
+- Context: Discussion #1 §1 asks for the interleave granularity and the llama.cpp
+  reference. The real blocker is memory — a load-time copy of the expert tensors needs
+  6+ GB extra heap (`MOE_RESEARCH_AND_FIX_PLAN.md`), which OOMs an 8 GB host.
+- Decision: repack **offline** into a `*.pzrepack` side-car (mmap'd read-only) that
+  reorders **whole Q4_K super-blocks within row-major expert blocks** so a token's top-k
+  experts are contiguous; keep the original GGUF usable. In-place order tables,
+  `madvise`, and huge pages are supplements, not the fix. Design:
+  `docs/architecture/MOE_EXPERT_REPACK_DESIGN.md`.
+- Rationale: contiguous top-k access is the lever for the prefetcher (86% L3 miss →
+  target < 60%); the zero-heap side-car is the only variant that fits 8 GB.
+- Status: PROPOSED (design only; no engine code in this change).
+
 ### 2026-07-31 — Fixed a real quantization-quality gap in the classifier INT8/INT4 path (GitHub issue #27, jpsoto)
 
 - Context: GitHub user jpsoto commented on issue #27 that the classifier's runtime INT4 quantization was
