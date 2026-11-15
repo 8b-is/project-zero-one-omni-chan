@@ -17,6 +17,7 @@ static int tn_alloc_too_large(size_t count, size_t elem_size) {
   size_t bytes;
   if (ram <= 0) return 0; /* unknown RAM: fall back to malloc-NULL behavior */
   if (tn_size_mul_overflow(count, elem_size, &bytes)) return 1;
+  if ((size_t)ram > SIZE_MAX / 32) return 0;
   return bytes > (size_t)ram * 32;
 }
 
@@ -34,6 +35,18 @@ TernaryError run_state_alloc_ex(RunState *s, const Config *cfg, int max_seq_len,
   int hidden_dim = cfg->hidden_dim;
   int kv_dim = config_kv_dim(cfg);
   int head_dim = config_head_dim(cfg);
+
+  /* Validate the largest planned buffer before allocating or zeroing scratch
+   * and attention buffers. An impossible KV cache must fail before a smaller
+   * (but still enormous) attention buffer can consume physical memory. */
+  size_t kv_cache_size = 0;
+  if (!skip_kv_cache &&
+      (tn_size_mul4((size_t)cfg->n_layers, (size_t)cfg->n_kv_heads,
+                    (size_t)max_seq_len, (size_t)head_dim, &kv_cache_size) ||
+       tn_alloc_too_large(kv_cache_size, sizeof(float)))) {
+    run_state_free(s);
+    return TN_ERR_OOM;
+  }
 
   /* Scratch buffers — 64-byte aligned for SIMD */
   s->x = (float *)tn_aligned_calloc(dim, sizeof(float), TN_SIMD_ALIGN);
@@ -75,16 +88,6 @@ TernaryError run_state_alloc_ex(RunState *s, const Config *cfg, int max_seq_len,
    * calloc's explicit memset would force real RSS commit for the whole
    * buffer even if freed moments later. */
   if (!skip_kv_cache) {
-    size_t kv_cache_size;
-    if (tn_size_mul4((size_t)cfg->n_layers, (size_t)cfg->n_kv_heads,
-                     (size_t)max_seq_len, (size_t)head_dim, &kv_cache_size)) {
-      run_state_free(s);
-      return TN_ERR_OOM;
-    }
-    if (tn_alloc_too_large(kv_cache_size, sizeof(float))) {
-      run_state_free(s);
-      return TN_ERR_OOM;
-    }
     s->key_cache =
         (float *)tn_aligned_calloc(kv_cache_size, sizeof(float), TN_SIMD_ALIGN);
     s->value_cache =

@@ -1552,3 +1552,8 @@
 - Detection: cross-checking with `git diff --name-status` (no path filter).
 - Correction: always run an unfiltered name-status diff first, then drill down.
 - Prevention rule: verify branch parity with a full diff before concluding; recorded in decision-log.
+
+### 2026-11-16 — Peer upgrades and allocation validation order
+- Separate dependency updates left the Web UI plugin requiring Svelte 5 while the app still used Svelte 4 and its constructor API. Building alone does not prove the browser mounts; test the rendered UI.
+- The redbox INT_MAX-context test zero-filled a huge attention buffer before reaching the KV-cache rejection. Move the existing checked KV-size/RAM preflight ahead of allocations. The existing OOM regression now completes promptly.
+- ASan reserves a large virtual shadow range: a small address-space limit prevents sanitizer startup. Bound physical RSS with ASan soft/hard limits for this regression instead.
