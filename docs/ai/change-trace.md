@@ -620,4 +620,4 @@
 ### 2026-11-16 — Dependency compatibility and bounded allocation preflight
 - Updated the Svelte runtime alongside Vite/plugin, switched root mounting to the supported API, and regenerated embedded Web UI assets.
 - Moved integer KV-buffer preflight ahead of allocations and made the existing RAM-limit multiplication overflow-safe. No arithmetic kernels or model weights changed.
-- Validation: production Web UI build and Chromium interaction/stream fixture; GCC and Clang release/test/debug checks recorded during the PR audit. No real-model golden-output or throughput claim: model weights are absent from this checkout.
+- Validation: production Web UI build and Chromium interaction/stream fixture; GCC and Clang release/test/debug checks recorded during the PR audit. Preserved DeepSeek-V2 GGUF tested twice on actual base and head with identical settings: every run emitted 17 exclamation marks, so golden quality fails on both. Background load makes throughput inconclusive; no model-capability or speedup claim.
