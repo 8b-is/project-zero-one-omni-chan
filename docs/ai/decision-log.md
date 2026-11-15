@@ -668,3 +668,8 @@
   regression" by building HEAD vs a known-good commit on the same host and comparing tok/s +
   golden outputs, rather than comparing to the documented absolute numbers.
 - Rationale: absolute tok/s isn't portable across CPUs; relative A/B is.
+
+### 2026-11-16 — Upgrade the Web UI toolchain as a compatible set
+- Keep Vite 8, vite-plugin-svelte 7 and Svelte 5 together; mount the root with Svelte's `mount` API. Regenerate the committed C asset bundle so installed binaries receive the same UI.
+- Browser validation covers mounting, sampling controls and a local streamed-chat fixture without a model service.
+- Preflight the existing KV allocation size before allocating scratch/attention buffers. Reject impossible contexts before any large zero-fill; guard the RAM-limit multiplication against overflow.
